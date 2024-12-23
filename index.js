@@ -19,16 +19,18 @@ import cors from "cors";
 import "./db.js";
 
 import { AdminRouter } from "./routes/auth.js";
+import { studentRouter } from "./routes/student.js";
 
-dotenv.config();
 const app = express();
 
 app.use(express.json());
 
-app.use(cors());
-
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(cookieParser());
+dotenv.config();
 app.use("/auth", AdminRouter);
+
+app.use("/student", studentRouter);
 // Function to ensure default admin account exists
 async function ensureAdminAccount() {
   try {
@@ -52,7 +54,7 @@ async function ensureAdminAccount() {
 
 // Ensure admin account before starting the server
 ensureAdminAccount().then(() => {
-  app.listen(process.env.PORT || 8001, () => {
+  app.listen(process.env.PORT || 3001, () => {
     console.log(`Server is running on port ${process.env.PORT}`);
   });
 });
