@@ -56,24 +56,29 @@ router.get("/book/:id", async (req, res) => {
   }
 });
 
-router.put("/book/:id", upload.single("image"), async (req, res) => {
-  const id = req.params.id;
-  try {
-    const { name, author } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : null;
+router.put(
+  "/book/:id",
+  verifyAdmin,
+  upload.single("image"),
+  async (req, res) => {
+    const id = req.params.id;
+    try {
+      const { name, author } = req.body;
+      const image = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // Update the book details
-    const updatedData = { name, author };
-    if (image) updatedData.image = image;
+      // Update the book details
+      const updatedData = { name, author };
+      if (image) updatedData.image = image;
 
-    const book = await Book.findByIdAndUpdate(id, updatedData, { new: true });
+      const book = await Book.findByIdAndUpdate(id, updatedData, { new: true });
 
-    return res.json({ updated: true, book });
-  } catch (err) {
-    console.error("Error updating book:", err);
-    return res.status(500).json({ message: "Error updating book" });
+      return res.json({ updated: true, book });
+    } catch (err) {
+      console.error("Error updating book:", err);
+      return res.status(500).json({ message: "Error updating book" });
+    }
   }
-});
+);
 router.delete("/book/:id", async (req, res) => {
   const id = req.params.id;
   try {

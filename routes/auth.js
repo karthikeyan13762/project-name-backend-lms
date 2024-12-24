@@ -34,7 +34,8 @@ router.post("/login", async (req, res) => {
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        maxAge: 3600000,
+        sameSite: "None", // Allow cross-origin cookies
+        maxAge: 3600000, // 1 hour
       });
       return res.json({ login: true, role: "admin" });
     } catch (err) {
@@ -64,22 +65,42 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// const verifyAdmin = (req, res, next) => {
+//   const token = req.cookies.token;
+
+//   if (!token) {
+//     return res.json({ message: "Invalid Admin" });
+//   } else {
+//     jwt.verify(token, process.env.ADMIN_SCREAT_KEY, (err, decoded) => {
+//       if (err) {
+//         return res.json({ message: "Invalid token" + err });
+//       } else {
+//         req.username = decoded.username;
+//         req.role = decoded.role;
+//         next();
+//       }
+//     });
+//   }
+// };
+
 const verifyAdmin = (req, res, next) => {
-  const token = req.cookies.token;
+  const token = req.cookies.token; // Ensure token is read from cookies
 
   if (!token) {
-    return res.json({ message: "Invalid Admin" });
-  } else {
-    jwt.verify(token, process.env.ADMIN_SCREAT_KEY, (err, decoded) => {
-      if (err) {
-        return res.json({ message: "Invalid token" + err });
-      } else {
-        req.username = decoded.username;
-        req.role = decoded.role;
-        next();
-      }
-    });
+    return res.status(403).json({ message: "Invalid Admin" });
   }
+
+  jwt.verify(token, process.env.ADMIN_SCREAT_KEY, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    if (decoded.role !== "admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    req.username = decoded.username;
+    req.role = decoded.role;
+    next();
+  });
 };
 const verifUser = (req, res, next) => {
   const token = req.cookies.token;
@@ -106,7 +127,7 @@ const verifUser = (req, res, next) => {
   }
 };
 router.get("/logout", (req, res) => {
-  res.clearCookie("token"); // Clear the token cookie
+  res.clearCookie("token", { sameSite: "None", secure: true }); // Clear the token cookie
   return res.json({ Logout: true }); // Explicitly return `Logout: true`
 });
 
