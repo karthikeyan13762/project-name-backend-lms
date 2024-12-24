@@ -59,6 +59,7 @@ router.post("/login", async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
       maxAge: 3600000,
     });
     return res.json({ login: true, role: "student" });
@@ -107,20 +108,22 @@ const verifUser = (req, res, next) => {
   if (!token) {
     return res.json({ message: "Invalid User" }); // Corrected the message for clarity
   } else {
-    jwt.verify(token, process.env.ADMIN_SCREAT_KEY, (err, decode) => {
+    jwt.verify(token, process.env.ADMIN_SCREAT_KEY, (err, decoded) => {
       if (err) {
-        jwt.verify(token, process.env.STUDENT_KEY, (err, decode) => {
+        jwt.verify(token, process.env.STUDENT_KEY, (err, decoded) => {
           if (err) {
-            return res.json({ message: "Invalid token" }); // Fixed response method
-          } else {
-            req.username = decode.username;
-            req.role = decode.role;
-            next();
+            return res.status(401).json({ message: "Invalid token" }); // Fixed response method
           }
+          if (decoded.role !== "student") {
+            return res.status(403).json({ message: "Access denied" });
+          }
+          req.username = decoded.username;
+          req.role = decoded.role;
+          next();
         });
       } else {
-        req.username = decode.username;
-        req.role = decode.role;
+        req.username = decoded.username;
+        req.role = decoded.role;
         next();
       }
     });

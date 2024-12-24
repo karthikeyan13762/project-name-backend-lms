@@ -4,16 +4,32 @@ import { Book } from "../models/Book.js";
 
 import { verifyAdmin } from "./auth.js";
 
-import multer from "multer";
-// Configure Multer for file uploads
+// import multer from "multer";
+// // Configure Multer for file uploads
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, "uploads/"); // Save files in the "uploads" directory
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, Date.now() + "-" + file.originalname); // Add timestamp to ensure unique filenames
+//   },
+// });
+// const upload = multer({ storage });
+
+const multer = require("multer");
+const path = require("path");
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Save files in the "uploads" directory
+    const uploadDir = path.join(__dirname, "uploads");
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname); // Add timestamp to ensure unique filenames
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
   },
 });
+
 const upload = multer({ storage });
 
 const router = expres.Router();
@@ -30,7 +46,7 @@ router.post("/add", verifyAdmin, upload.single("image"), async (req, res) => {
     });
     await newBook.save();
 
-    return res.json({ added: true });
+    return res.status(201).json({ added: true });
   } catch (err) {
     console.error("Error adding book:", err);
     return res.status(500).json({ message: "Error in adding new book" });
