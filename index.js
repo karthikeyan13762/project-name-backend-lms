@@ -15,6 +15,7 @@ import { Book } from "./models/Book.js";
 const app = express();
 //
 app.use(express.json());
+app.use("/uploads", expres.static("uploads"));
 app.use((req, res, next) => {
   res.setHeader(
     "Access-Control-Allow-Origin",
